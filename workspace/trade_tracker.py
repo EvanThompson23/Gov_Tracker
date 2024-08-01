@@ -7,7 +7,7 @@ from io import BytesIO
 
 class trades:
     def __init__(self):
-        self.tracked_name = "Pelosi"
+        self.tracked_name = "All"
         self.DS = DS()
 
     def check_new_trades(self):
@@ -19,7 +19,7 @@ class trades:
             if child.find("FilingType").text == "P":
                 last_name = child.find("Last").text
                 date = child.find("FilingDate").text
-                any_date = True
+                any_date = True # For testing a larger set of results
                 if (date == today or any_date) and (last_name == self.tracked_name or self.tracked_name == "All"):
                     id = child.find("DocID").text
                     reports.append([last_name,date[-4:],id])        
@@ -35,7 +35,7 @@ class trades:
             text = ""
             for page in reader.pages:
                 text += page.extract_text()
-            all_trades.append([info[0],"Blank"])
+            # all_trades.append([info[0],"Blank"]) # This is for testing and documentation
             all_trades += self.text_breakdown(text)
         return all_trades
 
@@ -49,23 +49,27 @@ class trades:
         for line in text:
             line.replace('\x00', '')
             if line[:2] == 'SP':
-                SP_hold = line
+                SP_hold = line[-2:] # Necessary to not flag the purchased action 
                 SP_bool = True
                 continue
             if SP_bool:
                 SP_bool = False
                 SP_hold += line
-                first_bracket = SP_hold.find("(")
-                second_bracket = SP_hold.find(")")
-                stock = SP_hold[first_bracket+1:second_bracket]
-                p_location = SP_hold.find("P ")
-                if p_location != -1:
+                stock = SP_hold[(SP_hold.find("(") +1):SP_hold.find(")")]
+                if len(stock) > 4 or len(stock) < 1: # Checks for Example NVAD instead of entire line
+                    continue
+                if SP_hold.find("P ") != -1:
+                    print(SP_hold)
                     action = "Purchased"
-                s_location = SP_hold.find("S ")
-                if s_location != -1:
+                elif SP_hold.find("S ") != -1:
                     action = "Sold"
+                else:
+                    continue
                 trades.append([stock, action])
         return trades
+
 t = trades()
 reports = t.check_new_trades()
 trades = t.get_trades(reports)
+for trade in trades:
+    print(trade)
