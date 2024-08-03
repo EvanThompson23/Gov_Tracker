@@ -34,7 +34,7 @@ class Breakdown:
         for trade in trades_text:
             p_date = self.get_purchase_date(trade)           
             f_date = self.get_filing_date(trade)
-            if stock := self.get_stock(trade) == None: continue
+            if (stock := self.get_stock(trade)) == None: continue
             action = self.get_action(trade)
             amount = self.get_amount(trade)
             trades.append(t := Trade(person, p_date, f_date, stock, action, amount))
@@ -50,17 +50,13 @@ class Breakdown:
     def get_trade_strings(self, text):
         text = self.remove_chars(text)
         text = text.splitlines()
-        #for te in text:
-            #print(te)
         SP = False
         trade_string = ''
         trade_strings = []
         for line in text:
-            print(line)
-            if line[:4] == 'F S:':
+            if (line[:4] == 'F S:' or line[:7] == "Gains >") and SP:
                 trade_strings.append(trade_string[4:])
                 SP = False
-                print("------> " + trade_string)
                 trade_string = ''
             if line[:2] == 'SP' or SP: # "SP" is at the start of ever stock trade
                 if line[:1] == "$":
@@ -104,5 +100,5 @@ for report in reports:
     PDF_text = File_Format.get_PDF_text(PDF_file)
     trades += Breakdown().text_breakdown(PDF_text, report[0])
 
-for trade in trades:
-    trade.print_all()
+# for trade in trades:
+    # trade.print_all()
